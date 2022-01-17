@@ -132,6 +132,9 @@ auto PerformAction::Active::make(
   std::function<void()> update,
   std::function<void()> finished) -> std::shared_ptr<Active>
 {
+  RCLCPP_ERROR(
+    context->node()->get_logger(),
+    "Inside PerformAction::Active::make()");
   auto active = std::make_shared<Active>(
     Active(std::move(category), std::move(desc), time_estimate));
   active->_assign_id = id;
@@ -236,11 +239,13 @@ void PerformAction::Active::_execute_action()
     _state->update_status(Status::Error);
     const std::string msg = "ActionExecutor not set via RobotUpdateHandle. "
       "Unable to perform the requested action.";
+    RCLCPP_ERROR(_context->node()->get_logger(), msg.c_str());
     _state->update_log().info(msg);
     _finished();
     return;
   }
-
+  RCLCPP_ERROR(_context->node()->get_logger(),
+    "Calling action_executor within _execute_action()");
   action_executor(_action_category, _action_description, _finished);
 }
 

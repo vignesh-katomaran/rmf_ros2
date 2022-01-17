@@ -499,6 +499,9 @@ public:
         const auto self = w.lock();
         if (!self)
           return;
+        RCLCPP_INFO(
+          self->_node->get_logger(),
+          "inside teleop_executioner. category: %s", category.c_str());
         self->set_action_completed(completed);
       };
     _travel_info.updater->set_action_executor(teleop_executioner);
@@ -590,21 +593,40 @@ public:
 
 void set_action_completed(ActionCompleted action_completed)
 {
+  if (action_completed == nullptr)
+  {
+    RCLCPP_INFO(
+      _node->get_logger(),
+      "set_action_completed() called with nullptr");
+    return;
+  }
   _action_completed = action_completed;
 }
 
 void complete_robot_action()
 {
   if (_action_completed == nullptr)
+  {
+    RCLCPP_INFO(
+      _node->get_logger(),
+      "_action_completed is nullptr for Robot [%s]",
+      _travel_info.robot_name.c_str());
+
     return;
+  }
+
+    RCLCPP_INFO(
+    _node->get_logger(),
+    "calling _action_completed for Robot [%s]",
+    _travel_info.robot_name.c_str());
 
   _action_completed();
   _action_completed == nullptr;
 
   RCLCPP_INFO(
-  _node->get_logger(),
-  "Robot [%s] has completed the action it was performing",
-  _travel_info.robot_name.c_str());
+    _node->get_logger(),
+    "Robot [%s] has completed the action it was performing",
+    _travel_info.robot_name.c_str());
 }
 
 private:
@@ -961,24 +983,41 @@ std::shared_ptr<Connections> make_fleet(
       [w = connections->weak_from_this(), fleet_name](
       rmf_fleet_msgs::msg::ModeRequest::UniquePtr msg)
       {
+        const auto self = w.lock();
+        if (!self)
+          return;
+
         if (msg->fleet_name.empty() ||
           msg->fleet_name != fleet_name ||
           msg->robot_name.empty())
         {
+          RCLCPP_ERROR(
+            self->adapter->node()->get_logger(),
+            "Irrelevant ModeRequest received");
           return;
         }
 
         if (msg->mode.mode == msg->mode.MODE_IDLE)
         {
-          const auto self = w.lock();
-          if (!self)
-            return;
-
+          RCLCPP_ERROR(
+            self->adapter->node()->get_logger(),
+            "Idle ModeRequest received");
           const auto command_it = self->robots.find(msg->robot_name);
           if (command_it == self->robots.end())
-            return;
+          {
+            RCLCPP_ERROR(
+              self->adapter->node()->get_logger(),
+              "Command_it for robot [%s] not found", msg->robot_name.c_str());
+          return;
+          }
+          RCLCPP_ERROR(
+            self->adapter->node()->get_logger(),
+            "Calling complete_robot_action");
 
           command_it->second->complete_robot_action();
+          RCLCPP_ERROR(
+            self->adapter->node()->get_logger(),
+            "Called complete_robot_action");
         }
       });
 
