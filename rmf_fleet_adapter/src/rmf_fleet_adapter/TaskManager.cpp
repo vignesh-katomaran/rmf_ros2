@@ -70,13 +70,15 @@ namespace rmf_fleet_adapter {
 TaskManagerPtr TaskManager::make(
   agv::RobotContextPtr context,
   std::optional<std::weak_ptr<BroadcastClient>> broadcast_client,
-  std::weak_ptr<agv::FleetUpdateHandle> fleet_handle)
+  std::weak_ptr<agv::FleetUpdateHandle> fleet_handle,
+  std::weak_ptr<DatabaseLogger> db)
 {
   auto mgr = TaskManagerPtr(
     new TaskManager(
       std::move(context),
       std::move(broadcast_client),
-      std::move(fleet_handle)));
+      std::move(fleet_handle),
+      std::move(db)));
 
   auto begin_pullover = [w = mgr->weak_from_this()]()
     {
@@ -220,10 +222,12 @@ TaskManagerPtr TaskManager::make(
 TaskManager::TaskManager(
   agv::RobotContextPtr context,
   std::optional<std::weak_ptr<BroadcastClient>> broadcast_client,
-  std::weak_ptr<agv::FleetUpdateHandle> fleet_handle)
+  std::weak_ptr<agv::FleetUpdateHandle> fleet_handle,
+  std::weak_ptr<DatabseLogger> db)
 : _context(std::move(context)),
   _broadcast_client(std::move(broadcast_client)),
   _fleet_handle(std::move(fleet_handle)),
+  _db(std::move(db)),
   _next_sequence_number(0),
   _last_update_time(std::chrono::steady_clock::now() - std::chrono::seconds(1))
 {

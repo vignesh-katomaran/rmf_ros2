@@ -21,6 +21,7 @@
 #include "LegacyTask.hpp"
 #include "agv/RobotContext.hpp"
 #include "BroadcastClient.hpp"
+#include "DatabaseLogger.hpp"
 
 #include <rmf_traffic/agv/Planner.hpp>
 
@@ -53,7 +54,8 @@ public:
   static std::shared_ptr<TaskManager> make(
     agv::RobotContextPtr context,
     std::optional<std::weak_ptr<BroadcastClient>> broadcast_client,
-    std::weak_ptr<agv::FleetUpdateHandle> fleet_handle);
+    std::weak_ptr<agv::FleetUpdateHandle> fleet_handle,
+    std::weak_ptr<DatabaseLogger> db);
 
   using Start = rmf_traffic::agv::Plan::Start;
   using StartSet = rmf_traffic::agv::Plan::StartSet;
@@ -148,7 +150,8 @@ private:
   TaskManager(
     agv::RobotContextPtr context,
     std::optional<std::weak_ptr<BroadcastClient>> broadcast_client,
-    std::weak_ptr<agv::FleetUpdateHandle>);
+    std::weak_ptr<agv::FleetUpdateHandle>,
+    std::weak_ptr<DatabseLogger> db);
 
   class ActiveTask
   {
@@ -234,6 +237,7 @@ private:
   agv::RobotContextPtr _context;
   std::optional<std::weak_ptr<BroadcastClient>> _broadcast_client;
   std::weak_ptr<agv::FleetUpdateHandle> _fleet_handle;
+  std::weak_ptr<DatabaseLogger> _db;
   rmf_task::ConstActivatorPtr _task_activator;
   ActiveTask _active_task;
   bool _emergency_active = false;

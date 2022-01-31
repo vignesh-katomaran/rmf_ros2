@@ -1296,7 +1296,8 @@ void FleetUpdateHandle::add_robot(
             TaskManager::make(
               context,
               broadcast_client,
-              std::weak_ptr<FleetUpdateHandle>(fleet))});
+              std::weak_ptr<FleetUpdateHandle>(fleet),
+              fleet->_pimpl->db)});
         });
     });
 }
