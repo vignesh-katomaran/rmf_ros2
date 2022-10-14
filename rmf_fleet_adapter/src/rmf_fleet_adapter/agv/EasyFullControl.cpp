@@ -629,10 +629,9 @@ void EasyCommandHandle::start_follow()
     else if (_state == InternalRobotState::MOVING)
     {
       // Variables which the nav_completed_cb will overwrite.
-      rmf_traffic::Duration remaining_time;
-      bool request_replan = false;
       std::this_thread::sleep_for(update_interval);
-      if (nav_completed_cb(remaining_time, request_replan))
+      auto nav_feedback = nav_completed_cb();
+      if (nav_feedback.completed)
       {
         RCLCPP_INFO(
           node->get_logger(),
@@ -651,7 +650,7 @@ void EasyCommandHandle::start_follow()
       else
       {
         // If the user requested a replan for this robot, trigger one.
-        if (request_replan)
+        if (nav_feedback.request_replan)
         {
           replan();
         }
@@ -699,7 +698,7 @@ void EasyCommandHandle::start_follow()
         {
           next_arrival_estimator(
             target_waypoint->index,
-            remaining_time);
+            nav_feedback.remaining_time);
         }
       }
     }
@@ -720,9 +719,7 @@ void EasyCommandHandle::start_follow()
 void EasyCommandHandle::start_dock()
 {
   auto docking_cb = handle_dock(dock_name, updater);
-  rmf_traffic::Duration remaining_time;
-  bool request_replan;
-  while (!docking_cb(remaining_time, request_replan) && !quit_dock_thread)
+  while (!docking_cb().completed && !quit_dock_thread)
   {
     RCLCPP_DEBUG(
       node->get_logger(),

@@ -61,12 +61,16 @@ public:
   class Configuration;
   class RobotState;
 
+  struct GoalCompletedFeedback {
+    bool completed;
+    rmf_traffic::Duration remaining_time;
+    bool request_replan;
+  };
+
   /// Callback definitions
   using GetStateCallback = std::function<RobotState(void)>;
   /// Set replan to true if your robot is stuck and needs a new plan.
-  using GoalCompletedCallback = std::function<bool(
-        rmf_traffic::Duration& remaining_time,
-        bool& request_replan)>;
+  using GoalCompletedCallback = std::function<GoalCompletedFeedback()>;
   using NavigationRequest =
     std::function<GoalCompletedCallback(
         const std::string& map_name,
