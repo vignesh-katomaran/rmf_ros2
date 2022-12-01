@@ -597,6 +597,11 @@ void LaneBlocker::request_lane_modifications(
     {
       transition_lane_state(lane_state, LaneState::Closed, lane_key);
     }
+    else if ((obstacles.size() == 0 || obstacles.size() < _speed_limit_threshold) &&
+      lane_state == LaneState::SpeedLimited)
+    {
+      transition_lane_state(lane_state, LaneState::Normal, lane_key);
+    }
     else
     {
       RCLCPP_INFO(
