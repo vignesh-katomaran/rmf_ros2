@@ -24,6 +24,8 @@ find_package(rmf_fleet_adapter REQUIRED)
 find_package(rmf_task REQUIRED)
 find_package(rmf_battery REQUIRED)
 find_package(rmf_task_msgs REQUIRED)
+find_package(nlohmann_json_schema_validator_vendor REQUIRED)
+find_package(nlohmann_json_schema_validator REQUIRED)
 
 include_directories(
   include
