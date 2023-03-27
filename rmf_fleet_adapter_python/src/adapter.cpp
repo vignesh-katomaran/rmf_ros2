@@ -278,7 +278,8 @@ PYBIND11_MODULE(rmf_adapter, m) {
     py::arg("name"),
     py::arg("profile"),
     py::arg("start"),
-    py::arg("handle_cb"))
+    py::arg("handle_cb"),
+    py::arg("task_execution_callback"))
   .def("close_lanes",
     &agv::FleetUpdateHandle::close_lanes,
     py::arg("lane_indices"))

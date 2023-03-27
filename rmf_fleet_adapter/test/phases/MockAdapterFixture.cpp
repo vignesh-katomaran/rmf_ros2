@@ -150,7 +150,8 @@ auto MockAdapterFixture::add_robot(
       info.context = pimpl.context.lock();
       info.command->updater = updater;
       robot_added.set_value(true);
-    });
+    },
+    []() { std::cout << "Task Execution Callback!" << std::endl; });
 
   robot_added.get_future().wait();
 

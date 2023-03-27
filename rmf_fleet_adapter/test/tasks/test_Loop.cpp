@@ -285,7 +285,8 @@ SCENARIO("Test loop requests", "[.flaky]")
       // assume battery soc is full
       updater->update_battery_soc(1.0);
       robot_cmd_0->updater = std::move(updater);
-    });
+    },
+    []() { std::cout << "Task Execution Callback!" << std::endl; });
 
   // Add Robot T1
   const rmf_traffic::agv::Plan::StartSet starts_1 = {{now, 7, 0.0}};
@@ -298,7 +299,8 @@ SCENARIO("Test loop requests", "[.flaky]")
       // assume battery soc is full
       updater->update_battery_soc(1.0);
       robot_cmd_1->updater = std::move(updater);
-    });
+    },
+    []() { std::cout << "Task Execution Callback!" << std::endl; });
 
   adapter.start();
   ws_server->start();

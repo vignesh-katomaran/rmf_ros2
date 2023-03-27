@@ -1232,7 +1232,8 @@ void FleetUpdateHandle::add_robot(
   const std::string& name,
   const rmf_traffic::Profile& profile,
   rmf_traffic::agv::Plan::StartSet start,
-  std::function<void(std::shared_ptr<RobotUpdateHandle>)> handle_cb)
+  std::function<void(std::shared_ptr<RobotUpdateHandle>)> handle_cb,
+  std::function<void()> task_execution_callback)
 {
   if (start.empty())
   {
@@ -1256,6 +1257,7 @@ void FleetUpdateHandle::add_robot(
     command = std::move(command),
     start = std::move(start),
     handle_cb = std::move(handle_cb),
+    task_execution_callback = std::move(task_execution_callback),
     fleet_wptr = weak_from_this()](
       rmf_traffic::schedule::Participant participant)
     {
@@ -1302,7 +1304,8 @@ void FleetUpdateHandle::add_robot(
         [fleet_wptr = std::weak_ptr<FleetUpdateHandle>(fleet),
         node_wptr = std::weak_ptr<Node>(fleet->_pimpl->node),
         context = std::move(context),
-        handle_cb = std::move(handle_cb)](const auto&)
+        handle_cb = std::move(handle_cb),
+        task_execution_callback = std::move(task_execution_callback)](const auto&)
         {
           auto fleet = fleet_wptr.lock();
           if (!fleet)
@@ -1393,7 +1396,8 @@ void FleetUpdateHandle::add_robot(
             TaskManager::make(
               context,
               broadcast_client,
-              std::weak_ptr<FleetUpdateHandle>(fleet))});
+              std::weak_ptr<FleetUpdateHandle>(fleet),
+              task_execution_callback)});
         });
     });
 }

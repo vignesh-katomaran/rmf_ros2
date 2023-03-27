@@ -463,7 +463,8 @@ SCENARIO("Test Delivery")
       // assume battery soc is full
       updater->update_battery_soc(1.0);
       robot_cmd->updater = std::move(updater);
-    });
+    },
+    []() { std::cout << "Task Execution Callback!" << std::endl; });
 
   auto quiet_dispenser = MockQuietDispenser::make(
     adapter.node(), quiet_dispenser_name);

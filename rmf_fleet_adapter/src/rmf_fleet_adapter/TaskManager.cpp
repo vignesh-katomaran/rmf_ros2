@@ -71,13 +71,15 @@ namespace rmf_fleet_adapter {
 TaskManagerPtr TaskManager::make(
   agv::RobotContextPtr context,
   std::optional<std::weak_ptr<rmf_websocket::BroadcastClient>> broadcast_client,
-  std::weak_ptr<agv::FleetUpdateHandle> fleet_handle)
+  std::weak_ptr<agv::FleetUpdateHandle> fleet_handle,
+  std::function<void()> task_execution_callback)
 {
   auto mgr = TaskManagerPtr(
     new TaskManager(
       std::move(context),
       std::move(broadcast_client),
-      std::move(fleet_handle)));
+      std::move(fleet_handle),
+      std::move(task_execution_callback)));
 
   auto begin_pullover = [w = mgr->weak_from_this()]()
     {
@@ -255,12 +257,14 @@ TaskManagerPtr TaskManager::make(
 TaskManager::TaskManager(
   agv::RobotContextPtr context,
   std::optional<std::weak_ptr<rmf_websocket::BroadcastClient>> broadcast_client,
-  std::weak_ptr<agv::FleetUpdateHandle> fleet_handle)
+  std::weak_ptr<agv::FleetUpdateHandle> fleet_handle,
+  std::function<void()> task_execution_callback)
 : _context(std::move(context)),
   _broadcast_client(std::move(broadcast_client)),
   _fleet_handle(std::move(fleet_handle)),
   _next_sequence_number(0),
-  _last_update_time(std::chrono::steady_clock::now() - std::chrono::seconds(1))
+  _last_update_time(std::chrono::steady_clock::now() - std::chrono::seconds(1)),
+  _task_execution_callback(std::move(task_execution_callback))
 {
   // Do nothing. The make() function does all further initialization.
 }
@@ -1198,9 +1202,19 @@ bool TaskManager::kill_task(
 //==============================================================================
 void TaskManager::_begin_next_task()
 {
+  // RCLCPP_INFO(
+  //     _context->node()->get_logger(),
+  //     "Current time [%ld] ",
+  //     _context->node()->now());
+  // RCLCPP_INFO(
+  //     _context->node()->get_logger(),
+  //     "begin new task called");
+      
   if (_active_task)
     return;
-
+  // RCLCPP_INFO(
+  //     _context->node()->get_logger(),
+  //     "begin new task called setp 2");
   std::lock_guard<std::mutex> guard(_mutex);
 
   if (_queue.empty() && _direct_queue.empty())
@@ -1210,13 +1224,17 @@ void TaskManager::_begin_next_task()
 
     return;
   }
-
+  // RCLCPP_INFO(
+  //     _context->node()->get_logger(),
+  //     "begin new task called setp 3");
   if (_waiting)
   {
     _waiting.cancel({"New task ready"}, _context->now());
     return;
   }
-
+  // RCLCPP_INFO(
+  //     _context->node()->get_logger(),
+  //     "begin new task called setp 4");
   // The next task should one in the direct assignment queue if present
   const bool is_next_task_direct = !_direct_queue.empty();
   const auto assignment = is_next_task_direct ?
@@ -1224,9 +1242,7 @@ void TaskManager::_begin_next_task()
     _queue.front();
 
   // We take the minimum of the two to deal with cases where the deployment_time
-  // as computed by the task planner is greater than the earliest_start_time
-  // which is greater than now. This can happen for example if the previous task
-  // completed earlier than estimated.
+  // as computed by the task _active_taskstimated.
   // TODO: Reactively replan task assignments across agents in a fleet every
   // time as task is completed.
   const auto deployment_time = std::min(
@@ -1235,6 +1251,12 @@ void TaskManager::_begin_next_task()
 
   const rmf_traffic::Time now = rmf_traffic_ros2::convert(
     _context->node()->now());
+
+  // RCLCPP_INFO(
+  //     _context->node()->get_logger(),
+  //     "Time comparision [%ld] for [%ld]. ",
+  //     deployment_time,
+  //     now);
 
   if (now >= deployment_time)
   {
@@ -1252,6 +1274,7 @@ void TaskManager::_begin_next_task()
         _phase_finished_cb(),
         _task_finished(id)),
       _context->now());
+      _task_execution_callback();
 
     if (is_next_task_direct)
       _direct_queue.erase(_direct_queue.begin());
@@ -1291,7 +1314,13 @@ void TaskManager::_begin_next_task()
   }
   else
   {
+    // RCLCPP_INFO(
+    //   _context->node()->get_logger(),
+    //   "begin new task called setp wait");
     if (!_waiting)
+    // RCLCPP_INFO(
+      // _context->node()->get_logger(),
+      // "begin new task called setp wait 2");
       _begin_waiting();
   }
 
