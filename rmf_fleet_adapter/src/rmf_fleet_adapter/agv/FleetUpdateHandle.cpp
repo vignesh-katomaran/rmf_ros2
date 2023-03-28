@@ -1233,7 +1233,7 @@ void FleetUpdateHandle::add_robot(
   const rmf_traffic::Profile& profile,
   rmf_traffic::agv::Plan::StartSet start,
   std::function<void(std::shared_ptr<RobotUpdateHandle>)> handle_cb,
-  std::function<void()> task_execution_callback)
+  std::function<void(const std::string&,const std::string&)> task_execution_callback)
 {
   if (start.empty())
   {

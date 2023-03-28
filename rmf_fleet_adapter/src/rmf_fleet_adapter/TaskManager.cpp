@@ -72,7 +72,7 @@ TaskManagerPtr TaskManager::make(
   agv::RobotContextPtr context,
   std::optional<std::weak_ptr<rmf_websocket::BroadcastClient>> broadcast_client,
   std::weak_ptr<agv::FleetUpdateHandle> fleet_handle,
-  std::function<void()> task_execution_callback)
+  std::function<void(const std::string&,const std::string&)> task_execution_callback)
 {
   auto mgr = TaskManagerPtr(
     new TaskManager(
@@ -258,7 +258,7 @@ TaskManager::TaskManager(
   agv::RobotContextPtr context,
   std::optional<std::weak_ptr<rmf_websocket::BroadcastClient>> broadcast_client,
   std::weak_ptr<agv::FleetUpdateHandle> fleet_handle,
-  std::function<void()> task_execution_callback)
+  std::function<void(const std::string&,const std::string&)> task_execution_callback)
 : _context(std::move(context)),
   _broadcast_client(std::move(broadcast_client)),
   _fleet_handle(std::move(fleet_handle)),
@@ -1264,6 +1264,7 @@ void TaskManager::_begin_next_task()
     const auto& id = assignment.request()->booking()->id();
     _context->current_task_end_state(assignment.finish_state());
     _context->current_task_id(id);
+    _task_execution_callback(id,"started");
     _active_task = ActiveTask::start(
       _context->task_activator()->activate(
         _context->make_get_state(),
@@ -1272,9 +1273,8 @@ void TaskManager::_begin_next_task()
         _update_cb(),
         _checkpoint_cb(),
         _phase_finished_cb(),
-        _task_finished(id)),
+        _task_finished(id,_task_execution_callback)),
       _context->now());
-      _task_execution_callback();
 
     if (is_next_task_direct)
       _direct_queue.erase(_direct_queue.begin());
@@ -1299,7 +1299,7 @@ void TaskManager::_begin_next_task()
           if (const auto self = w.lock())
             self->_begin_next_task();
         });
-
+      _task_execution_callback(id,"ended");
       return;
     }
 
@@ -2082,9 +2082,9 @@ TaskManager::_phase_finished_cb()
 }
 
 //==============================================================================
-std::function<void()> TaskManager::_task_finished(std::string id)
+std::function<void()> TaskManager::_task_finished(std::string id,std::function<void(const std::string&,const std::string&)> cb_func)
 {
-  return [w = weak_from_this(), id]()
+  return [w = weak_from_this(), id,cb_func]()
     {
       const auto self = w.lock();
       if (!self)
@@ -2093,7 +2093,7 @@ std::function<void()> TaskManager::_task_finished(std::string id)
       // Publish the final state of the task before destructing it
       self->_publish_task_state();
       self->_active_task = ActiveTask();
-
+      cb_func(id,"ended");
       self->_context->worker().schedule(
         [w = self->weak_from_this()](const auto&)
         {

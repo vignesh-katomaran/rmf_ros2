@@ -891,7 +891,7 @@ struct Connections : public std::enable_shared_from_this<Connections>
         command->set_updater(updater);
         connections->robots[robot_name] = command;
       },
-      []() { std::cout << "Task Execution Callback!" << std::endl; }
+      [](std::string id,std::string status) { std::cout << "Task Execution Callback!" << std::endl; }
       );
   }
 

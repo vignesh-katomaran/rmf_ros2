@@ -54,7 +54,7 @@ public:
     agv::RobotContextPtr context,
     std::optional<std::weak_ptr<rmf_websocket::BroadcastClient>> broadcast_client,
     std::weak_ptr<agv::FleetUpdateHandle> fleet_handle,
-    std::function<void()> task_execution_callback);
+    std::function<void(const std::string&, const std::string&)> task_execution_callback);
 
   using Start = rmf_traffic::agv::Plan::Start;
   using StartSet = rmf_traffic::agv::Plan::StartSet;
@@ -212,9 +212,9 @@ private:
     agv::RobotContextPtr context,
     std::optional<std::weak_ptr<rmf_websocket::BroadcastClient>> broadcast_client,
     std::weak_ptr<agv::FleetUpdateHandle>,
-    std::function<void()> task_execution_callback);
+    std::function<void(const std::string&,const std::string&)> task_execution_callback);
 
-  std::function<void()> _task_execution_callback;
+  std::function<void(const std::string&, const std::string&)> _task_execution_callback;
 
   class ActiveTask
   {
@@ -510,7 +510,7 @@ private:
   std::function<void(rmf_task::Phase::ConstCompletedPtr)> _phase_finished_cb();
 
   /// Callback for when the task has finished
-  std::function<void()> _task_finished(std::string id);
+  std::function<void()> _task_finished(std::string id, std::function<void(const std::string&,const std::string&)> cb_func);
 
   /// Function to register the task id of a task that has begun execution
   /// The input task id will be inserted into the registry such that the max

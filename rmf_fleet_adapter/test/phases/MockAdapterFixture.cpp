@@ -151,7 +151,7 @@ auto MockAdapterFixture::add_robot(
       info.command->updater = updater;
       robot_added.set_value(true);
     },
-    []() { std::cout << "Task Execution Callback!" << std::endl; });
+    [](std::string id,std::string status) { std::cout << "Task Execution Callback!" << std::endl; });
 
   robot_added.get_future().wait();
 
